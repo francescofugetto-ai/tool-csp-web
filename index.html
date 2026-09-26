@@ -1,0 +1,1068 @@
+﻿<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Tool CSP">
+<meta name="theme-color" content="#FAF9F7">
+<script data-iphone="sentinella">
+(function(){
+var h=document.documentElement, msg="";
+function ha(c){ return (" "+h.className+" ").indexOf(" "+c+" ")>=0; }
+// L'errore puo' arrivare prima che l'avviso esista — uno script in <head> che
+// non si lascia leggere —: il messaggio si tiene da parte e si scrive quando
+// la pagina c'e'.
+function scrivi(){
+  var e=document.getElementById("nmerr");
+  if(e&&msg) e.textContent="Errore del motore: "+msg;
+}
+function ko(m){
+  if(m&&!msg) msg=m;
+  if(!ha("motore-ko")) h.className+=" motore-ko";
+  scrivi();
+}
+h.className+=" js";
+window.onerror=function(m,src,riga,col){
+  m=String(m);
+  if(/^Script error\.?$/.test(m)) m="il browser non ne mostra il dettaglio (\u00abScript error.\u00bb)";
+  ko(m+(riga?" (riga "+riga+(col?", colonna "+col:"")+")":""));
+};
+document.addEventListener("DOMContentLoaded",function(){
+  if(!ha("motore-ok")) ko(msg||"il motore non ha completato l'avvio"); else scrivi();
+});
+})();
+</script>
+<title>Pacing del sistema di conduzione — CSP, BiVP o RVP</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+  :root {
+    --bg:#FAF9F7; --surface:#FFFFFF; --surface-alt:#F3F2EF;
+    --border:rgba(11,11,11,0.10); --border-strong:rgba(11,11,11,0.18);
+    --text-primary:#0B0B0B; --text-secondary:#52514E; --text-muted:#76746F;
+    --accent-blue:#2A78D6;   --accent-blue-bg:#E6F1FB;   --accent-blue-border:#B5D4F4;
+    --accent-amber:#BA7517;  --accent-amber-bg:#FAEEDA;  --accent-amber-border:#FAC775;
+    --accent-red:#A32D2D;    --accent-red-bg:#FCEBEB;    --accent-red-border:#F7C1C1;
+    --accent-green:#3B6D11;  --accent-green-bg:#EAF3DE;  --accent-green-border:#C0DD97;
+    --accent-purple:#534AB7; --accent-purple-bg:#EEEDFE; --accent-purple-border:#CECBF6;
+    --cor-1:#3B8E5A; --cor-2a:#E0A82E; --cor-2b:#DE7E3C; --cor-3:#B33A3A;
+    --k0:#2E7D4F; --k0-bg:#E2F3E8; --k0-bd:#A6D9B8;
+    --k1:#2A78D6; --k1-bg:#E3EFFB; --k1-bd:#A9CBF1;
+    --k2:#8A6A00; --k2-bg:#FBF3C8; --k2-bd:#EBD56C;
+    --k3:#B45309; --k3-bg:#FDEBD8; --k3-bd:#F4BD85;
+    --k4:#A32D2D; --k4-bg:#FCE3E3; --k4-bd:#F0A9A9;
+    --grid:rgba(42,120,214,.08);
+    --font:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    --display:'IBM Plex Sans Condensed','Arial Narrow',-apple-system,'Segoe UI',sans-serif;
+    --mono:'IBM Plex Mono',ui-monospace,Consolas,'Courier New',monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:#111418; --surface:#181C22; --surface-alt:#20252D;
+      --border:rgba(255,255,255,.10); --border-strong:rgba(255,255,255,.19);
+      --text-primary:#E7EAEE; --text-secondary:#B8BEC7; --text-muted:#949BA5;
+      --accent-blue:#72AAEE;   --accent-blue-bg:#18283A;   --accent-blue-border:#2E4B6C;
+      --accent-amber:#E3A94F;  --accent-amber-bg:#30250F;  --accent-amber-border:#5D4719;
+      --accent-red:#EF8E8E;    --accent-red-bg:#361B1B;    --accent-red-border:#6B3232;
+      --accent-green:#95C873;  --accent-green-bg:#1C2A13;  --accent-green-border:#3C5626;
+      --accent-purple:#ADA6F2; --accent-purple-bg:#23213B; --accent-purple-border:#454077;
+      --k0:#8FD3A8; --k0-bg:#132B1D; --k0-bd:#2D5A3E;
+      --k1:#8EC0F5; --k1-bg:#16283C; --k1-bd:#2F5378;
+      --k2:#EDD36A; --k2-bg:#2C260C; --k2-bd:#5E5120;
+      --k3:#F3B27A; --k3-bg:#33210F; --k3-bd:#6B4524;
+      --k4:#F29A9A; --k4-bg:#361B1B; --k4-bd:#6B3232;
+      --grid:rgba(114,170,238,.07);
+      color-scheme:dark;
+    }
+  }
+  body { font-family:var(--font); background:var(--bg); color:var(--text-primary); font-size:14.5px; line-height:1.65; -webkit-font-smoothing:antialiased; }
+  .page { max-width:960px; margin:0 auto; padding:0 16px 4rem; overflow-wrap:anywhere; }
+  strong, b { font-weight:600; }
+  .muted { color:var(--text-muted); }
+  .hero { margin:0 -16px 0; padding:2.2rem 16px 1.3rem; border-bottom:1px solid var(--border);
+          background-color:var(--bg);
+          background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+          background-size:22px 22px; }
+  .kicker { font-family:var(--mono); font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--accent-blue); margin-bottom:8px; }
+  .headline { font-family:var(--display); font-size:30px; font-weight:700; line-height:1.12; margin-bottom:10px; }
+  .lede { font-size:14.5px; color:var(--text-secondary); max-width:760px; margin-bottom:12px; }
+  .lede strong { color:var(--text-primary); }
+  .meta-row { display:flex; flex-wrap:wrap; gap:6px 8px; font-size:12px; }
+  .meta-chip { background:var(--surface); border:1px solid var(--border-strong); border-radius:99px; padding:2px 10px; color:var(--text-secondary); overflow-wrap:anywhere; }
+  .meta-chip strong { color:var(--text-primary); }
+  .bar { position:-webkit-sticky;position:sticky; top:0; z-index:30; background:var(--bg); border-bottom:1px solid var(--border-strong);
+         margin:0 -16px 1.2rem; padding:8px 16px; display:flex; flex-wrap:wrap; align-items:center; gap:5px 9px; }
+  .bar .lbl { font-family:var(--mono); font-size:10.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted); }
+  .bar .sp { flex:1 1 auto; }
+  .btn { font:600 12.5px var(--font); padding:6px 13px; border-radius:99px; border:1px solid var(--border-strong); background:var(--surface); color:var(--text-secondary); cursor:pointer; }
+  .btn:hover { border-color:var(--accent-blue); color:var(--accent-blue); }
+  .stage { display:flex; align-items:baseline; gap:10px; margin:2rem 0 .7rem; padding-bottom:6px; border-bottom:2px solid var(--border-strong); }
+  .stage-n { font-family:var(--mono); font-size:12px; font-weight:600; color:#FFFFFF; background:var(--accent-blue); border-radius:6px; padding:1px 7px; }
+  .stage-t { font-family:var(--display); font-size:20px; font-weight:700; line-height:1.2; }
+  .stage-w { margin-left:auto; font-size:11.5px; color:var(--text-muted); text-align:right; }
+  .card { background:var(--surface); border:1px solid var(--border-strong); border-radius:12px; padding:14px 16px; margin-bottom:12px; }
+  .card h3 { font-size:13px; font-weight:600; letter-spacing:.02em; margin-bottom:8px; color:var(--text-secondary); }
+  .row { display:flex; flex-wrap:wrap; align-items:center; gap:8px 16px; margin-bottom:10px; }
+  .row:last-child { margin-bottom:0; }
+  .fl { font-size:12.5px; font-weight:600; color:var(--text-secondary); min-width:150px; }
+  .fl small { display:block; font-weight:400; color:var(--text-muted); font-size:11.5px; }
+  input[type=number] { font:500 15px var(--font); color:var(--text-primary); background:var(--surface); border:1px solid var(--border-strong); border-radius:8px; padding:6px 9px; width:92px; text-align:center; }
+  .seg { display:inline-flex; flex-wrap:wrap; border:1px solid var(--border-strong); border-radius:10px; overflow:hidden; max-width:100%; }
+  .seg label { position:relative; cursor:pointer; }
+  .seg input { position:absolute; opacity:0; width:1px; height:1px; }
+  .seg span { display:block; padding:6px 12px; font-size:13.5px; font-weight:500; color:var(--text-secondary); border-right:1px solid var(--border); }
+  .seg label:last-child span { border-right:none; }
+  .seg input:checked + span { background:var(--text-primary); color:var(--bg); }
+  .seg input:focus-visible + span { outline:2px solid var(--accent-blue); outline-offset:-2px; }
+  .chk { display:flex; align-items:flex-start; gap:9px; padding:6px 0; font-size:14px; line-height:1.45; border-bottom:1px dashed var(--border); cursor:pointer; }
+  .chk:last-child { border-bottom:none; }
+  .chk input { margin-top:3px; width:17px; height:17px; flex:0 0 auto; accent-color:var(--accent-blue); }
+  .chk small { display:block; color:var(--text-muted); font-size:12px; }
+  .due { display:grid; grid-template-columns:1fr 1fr; gap:4px 14px; }
+  .hide { display:none !important; }
+  .esito { display:flex; flex-wrap:wrap; align-items:center; gap:10px 14px; margin-bottom:4px; }
+  .cat { display:inline-block; font-size:12.5px; font-weight:600; border-radius:99px; padding:2px 10px; border:1px solid; }
+  .k0 { color:var(--k0); background:var(--k0-bg); border-color:var(--k0-bd); }
+  .k1 { color:var(--k1); background:var(--k1-bg); border-color:var(--k1-bd); }
+  .k2 { color:var(--k2); background:var(--k2-bg); border-color:var(--k2-bd); }
+  .k3 { color:var(--k3); background:var(--k3-bg); border-color:var(--k3-bd); }
+  .k4 { color:var(--k4); background:var(--k4-bg); border-color:var(--k4-bd); }
+  .kx { color:var(--text-muted); background:var(--surface-alt); border-color:var(--border-strong); }
+  .big { font-family:var(--display); font-size:22px; font-weight:700; line-height:1.2; }
+  .cor { display:inline-block; font-family:var(--mono); font-size:11px; font-weight:600; color:#FFFFFF; border-radius:4px; padding:0 5px; margin:0 1px; white-space:nowrap; vertical-align:1px; }
+  .c1 { background:var(--cor-1); } .c2a { background:var(--cor-2a); color:#1D1602; } .c2b { background:var(--cor-2b); } .c3 { background:var(--cor-3); }
+  .cnc { background:var(--surface-alt); color:var(--text-secondary); border:1px solid var(--border-strong); }
+  .ev { display:inline-block; font-family:var(--mono); font-size:11px; font-weight:600; color:var(--text-secondary); background:var(--surface-alt); border:1px solid var(--border-strong); border-radius:4px; padding:0 5px; white-space:nowrap; vertical-align:1px; }
+  .ev.fig { font-style:italic; font-weight:500; }
+  .pg { font-family:var(--mono); font-size:11px; color:var(--text-muted); }
+  .nota { border-left:3px solid var(--accent-amber); background:var(--accent-amber-bg); border-radius:0 8px 8px 0; padding:7px 11px; margin-top:8px; font-size:13.5px; }
+  .nota.info { border-left-color:var(--accent-blue); background:var(--accent-blue-bg); }
+  .nota.stop { border-left-color:var(--accent-red); background:var(--accent-red-bg); }
+  .nota.ok { border-left-color:var(--accent-green); background:var(--accent-green-bg); }
+  .nota strong, .nota b { color:var(--text-primary); }
+  .riga { display:flex; gap:10px; padding:8px 0; border-bottom:1px dashed var(--border); }
+  .riga:last-child { border-bottom:none; }
+  .riga .ico { flex:0 0 22px; font-weight:700; text-align:center; font-family:var(--mono); font-size:13px; padding-top:1px; }
+  .riga .tx { flex:1 1 auto; font-size:14px; min-width:0; overflow-wrap:anywhere; }
+  .riga.si .ico { color:var(--k0); }
+  .riga.no .ico { color:var(--text-muted); }
+  .riga.no .tx { color:var(--text-muted); }
+  .riga.nd .ico { color:var(--accent-amber); }
+  .riga.esc .ico { color:var(--accent-red); }
+  .mod { padding:9px 0 10px; border-bottom:1px dashed var(--border); }
+  .mod:last-child { border-bottom:none; }
+  .mod .mh { display:flex; flex-wrap:wrap; align-items:center; gap:4px 8px; }
+  .mod .mn { font-family:var(--display); font-size:18px; font-weight:700; min-width:48px; }
+  .mod .md { font-size:13.5px; color:var(--text-secondary); margin-top:3px; }
+  .mod .md b { color:var(--text-primary); }
+  .mod.fuori .mn { color:var(--text-muted); }
+  .via { font-family:var(--mono); font-size:11.5px; color:var(--text-muted); margin-bottom:6px; }
+  .conf { padding:8px 0; border-bottom:1px dashed var(--border); font-size:13.5px; }
+  .conf:last-child { border-bottom:none; }
+  .conf .ct { display:inline-block; font-family:var(--mono); font-size:10.5px; font-weight:600; letter-spacing:.05em; color:var(--accent-purple); background:var(--accent-purple-bg); border:1px solid var(--accent-purple-border); border-radius:4px; padding:0 5px; margin-right:4px; white-space:nowrap; }
+  .lista li { margin:4px 0 4px 18px; font-size:13.5px; }
+  .foot { margin-top:2.4rem; padding-top:1rem; border-top:1px solid var(--border-strong); font-size:12px; color:var(--text-muted); line-height:1.7; }
+  .foot strong { color:var(--text-secondary); }
+  @media (max-width:640px) {
+    .due { grid-template-columns:1fr; }
+    .headline { font-size:25px; }
+    .stage-w { display:none; }
+    .fl { min-width:0; width:100%; }
+    .big { font-size:19px; }
+  }
+  @media print { .bar { position:static; } }
+</style>
+<style data-iphone="stile">
+/* L'avviso e' visibile per costruzione: lo nasconde solo la classe che la
+   sentinella mette quando JavaScript esiste, e lo rimostra quando il motore
+   muore. Nell'anteprima dell'iPhone nessuna delle due arriva. */
+#nomotore{background:#FCEBEB;border:1.5px solid #A32D2D;border-radius:10px;
+ padding:12px 15px;margin:0 0 1.1rem;font-size:13.5px;line-height:1.6;color:#0B0B0B;
+ font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif}
+#nomotore strong{display:block;color:#A32D2D;font-size:15px;margin-bottom:4px}
+#nomotore p{margin:6px 0 0}
+#nomotore a{color:#A32D2D}
+#nomotore .nmurl{font-family:'SFMono-Regular',Consolas,Menlo,monospace;font-size:.92em;word-break:break-all}
+#nomotore .nmerr{display:block;font-family:'SFMono-Regular',Consolas,Menlo,monospace;
+ font-size:11.5px;color:#A32D2D;margin-top:6px;word-break:break-word}
+#nomotore .nmerr:empty{display:none}
+html.js #nomotore{display:none}
+html.js.motore-ko #nomotore{display:block}
+
+#nmprivacy{background:#E2F4F5;border:1px solid #A7DBDE;border-radius:8px;padding:9px 13px;
+ margin:0 0 1rem;font-size:12.5px;line-height:1.55;color:#0B0B0B;
+ font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif}
+@media print{#nmprivacy{display:none}}
+</style>
+</head>
+<body>
+<div class="nomotore" id="nomotore" role="alert">
+ <strong>Motore di calcolo non attivo</strong>
+ <p>I calcoli, i filtri e i comandi di questa pagina <b>non funzionano</b>: dove leggi «—» non c'è un
+ valore. Il testo resta leggibile, i numeri che dipendono dai tuoi dati no. Non usare questa pagina
+ per decidere una dose.</p>
+ <p>Su iPhone e iPad succede sempre con un file salvato sul telefono: si apre nell'<b>anteprima</b> —
+ dall'app File, da Mail, da WhatsApp —, che mostra la pagina ma non esegue il motore, e Apple non
+ permette di aprirlo in Safari. Sull'iPhone il tool funziona aperto da questo indirizzo, in Safari: <a class="nmurl" href="https://francescofugetto-ai.github.io/tool-csp-web/">https://francescofugetto-ai.github.io/tool-csp-web/</a> — poi Condividi, «Aggiungi alla schermata Home». Dopo la prima apertura funziona anche senza rete. Su computer e Android basta aprire il file.</p>
+ <span class="nmerr" id="nmerr"></span>
+</div>
+<div class="nmprivacy" id="nmprivacy">
+ <b>Quello che scrivi resta su questo dispositivo.</b> La pagina non invia niente in rete e non
+ salva niente: nessun dato esce da qui. Per la stessa ragione, <b>chiudendola il contenuto si
+ perde</b> — copia il referto dove ti serve prima di chiudere.
+</div>
+<div class="page">
+<header class="hero">
+  <div class="kicker">Strumento · Pacing e CIED · EHRA/ESC 2025</div>
+  <h1 class="headline">Quale stimolazione — sistema di conduzione, biventricolare o ventricolare destra</h1>
+  <p class="lede"><strong>Come si usa.</strong> Il passo 1 sceglie lo <strong>scenario</strong>, cioè la figura del consensus: blocco AV (Fig. 5), ablazione del nodo AV (Fig. 7), candidato a CRT, PICM o non-responder (Fig. 8). I passi 2–3 portano la <strong>LVEF</strong>, la <strong>quota di pacing ventricolare atteso</strong> e il QRS; il passo 4 le valvole; il passo 5 l'impianto, l'operatore e ciò che serve per decidere il <strong>backup</strong>. Ne esce, per <strong>CSP</strong>, <strong>BiVP</strong> e <strong>RVP</strong>, la categoria di advice con la forza dell'evidenza e la pagina; poi <strong>HBP o LBBAP</strong>, il backup e che cosa fare se l'impianto non riesce. <strong>Azzera</strong>, in alto, ricomincia.</p>
+  <div class="meta-row">
+    <span class="meta-chip"><strong>Fonte</strong> ESC clinical consensus statement on indications for conduction system pacing (EHRA/ESC 2025) · <em>Europace</em> 2025;27:euaf050</span>
+    <span class="meta-chip"><strong>Da</strong> Fig. 5 p. 11 · Fig. 7 p. 14 · Fig. 8 p. 17 · Tab. 1 p. 7 · Tab. 2 p. 8 · Tab. 3 p. 13 · le 28 advice (pp. 4–22)</span>
+    <span class="meta-chip"><strong>Scala</strong> TO DO · MAY BE · NOT TO DO · INCERTO, con la forza dell'evidenza — <strong>non COR/LOE</strong></span>
+  </div>
+</header>
+
+<div class="bar" id="bar" aria-live="polite">
+  <span class="lbl">CSP</span> <span id="barCsp" class="cat kx">—</span>
+  <span class="lbl">BiVP</span> <span id="barBiv" class="cat kx">—</span>
+  <span class="lbl">RVP</span> <span id="barRvp" class="cat kx">—</span>
+  <span class="lbl">Tipo</span> <span id="barTipo" class="cat kx">—</span>
+  <span class="lbl">Backup</span> <span id="barBackup" class="cat kx">—</span>
+  <span class="sp"></span>
+  <button class="btn" id="azzera" type="button">Azzera</button>
+</div>
+
+<div class="stage"><span class="stage-n">1</span><span class="stage-t">Scenario</span><span class="stage-w">Fig. 5 · Fig. 7 · Fig. 8 · p. 15</span></div>
+<div class="card">
+  <div class="row">
+    <span class="fl">Per che cosa si stimola<small>ogni scenario è una figura del consensus</small></span>
+    <span class="seg">
+      <label><input type="radio" name="scen" value="bav"><span>blocco AV</span></label>
+      <label><input type="radio" name="scen" value="avna"><span>ablazione del nodo AV</span></label>
+      <label><input type="radio" name="scen" value="crt"><span>candidato a CRT</span></label>
+      <label><input type="radio" name="scen" value="picm"><span>PICM</span></label>
+      <label><input type="radio" name="scen" value="nonresp"><span>non-responder alla BiV-CRT</span></label>
+      <label><input type="radio" name="scen" value="snd"><span>disfunzione sinusale</span></label>
+    </span>
+  </div>
+</div>
+
+<div class="stage"><span class="stage-n">2</span><span class="stage-t">Funzione ventricolare e quota di pacing</span><span class="stage-w">Fig. 5 · Fig. 7 · Fig. 8</span></div>
+<div class="card">
+  <div class="row" id="rigaFe">
+    <span class="fl">LVEF<small>%; le figure tagliano a 35, 40 e 50</small></span>
+    <input type="number" id="fe" min="5" max="80" step="1" inputmode="numeric" placeholder="es. 45">
+  </div>
+  <div class="row" id="rigaVp">
+    <span class="fl">Pacing ventricolare atteso<small>quota prevista di battiti stimolati</small></span>
+    <span class="seg">
+      <label><input type="radio" name="vp" value="meno20"><span>&lt;20%</span></label>
+      <label><input type="radio" name="vp" value="piu20"><span>≥20%</span></label>
+    </span>
+  </div>
+  <p class="muted hide" id="notaNoFe" style="font-size:13px">In questo scenario la figura non divide per LVEF né per quota di pacing.</p>
+</div>
+
+<div class="stage"><span class="stage-n">3</span><span class="stage-t">QRS e sede del blocco</span><span class="stage-w">Fig. 8 · advice p. 18 · Tab. 2 · p. 21</span></div>
+<div class="card">
+  <div class="row" id="rigaMorf">
+    <span class="fl">QRS nativo<small>BBS = blocco di branca sinistra; non-BBS = BBD o ritardo aspecifico</small></span>
+    <span class="seg">
+      <label><input type="radio" name="morf" value="stretto"><span>stretto</span></label>
+      <label><input type="radio" name="morf" value="bbs"><span>BBS</span></label>
+      <label><input type="radio" name="morf" value="bbd"><span>BBD</span></label>
+      <label><input type="radio" name="morf" value="nivcd"><span>ritardo aspecifico (NIVCD)</span></label>
+    </span>
+  </div>
+  <div class="row" id="rigaQrs">
+    <span class="fl">Durata del QRS<small>ms; l'advice CSP-CRT chiede ≥130 ms</small></span>
+    <input type="number" id="qrs" min="60" max="300" step="1" inputmode="numeric" placeholder="es. 150">
+  </div>
+  <div class="row" id="rigaSede">
+    <span class="fl">Sede del blocco<small>nodale = sopra-hisiano; infranodale = intra- o infra-hisiano (Tab. 2)</small></span>
+    <span class="seg">
+      <label><input type="radio" name="sede" value="nodale"><span>nodale</span></label>
+      <label><input type="radio" name="sede" value="infranodale"><span>infranodale</span></label>
+      <label><input type="radio" name="sede" value="nd"><span>non nota</span></label>
+    </span>
+  </div>
+  <p class="muted hide" id="notaNoQrs" style="font-size:13px">In questo scenario il QRS non entra nella scelta.</p>
+</div>
+
+<div class="stage"><span class="stage-n">4</span><span class="stage-t">Valvole</span><span class="stage-w">Tab. 2, p. 8 · advice p. 9</span></div>
+<div class="card">
+  <div class="row">
+    <span class="fl">Valvola aortica</span>
+    <span class="seg">
+      <label><input type="radio" name="aorta" value="no"><span>niente di rilevante</span></label>
+      <label><input type="radio" name="aorta" value="malattia"><span>valvulopatia significativa</span></label>
+      <label><input type="radio" name="aorta" value="programmato"><span>TAVI o chirurgia programmata</span></label>
+      <label><input type="radio" name="aorta" value="pregresso"><span>TAVI o chirurgia pregressa</span></label>
+    </span>
+  </div>
+  <div class="row">
+    <span class="fl">Valvola tricuspide</span>
+    <span class="seg">
+      <label><input type="radio" name="tric" value="no"><span>niente di rilevante</span></label>
+      <label><input type="radio" name="tric" value="intervento"><span>chirurgia, protesi o riparazione transcatetere</span></label>
+      <label><input type="radio" name="tric" value="disfunzione"><span>disfunzione, senza intervento</span></label>
+    </span>
+  </div>
+</div>
+
+<div class="stage"><span class="stage-n">5</span><span class="stage-t">Impianto, operatore, backup</span><span class="stage-w">pp. 4, 7, 12–15, 18–21</span></div>
+<div class="card">
+  <div class="row">
+    <span class="fl">Esito dell'impianto<small>se è già stato tentato</small></span>
+    <span class="seg">
+      <label><input type="radio" name="esito" value="nd"><span>non ancora tentato</span></label>
+      <label><input type="radio" name="esito" value="sc"><span>seno coronarico non impiantabile</span></label>
+      <label><input type="radio" name="esito" value="qrs"><span>QRS stimolato largo o non fisiologico</span></label>
+      <label><input type="radio" name="esito" value="lbbapko"><span>LBBAP non riuscito</span></label>
+      <label><input type="radio" name="esito" value="hbpko"><span>HBP non riuscito</span></label>
+    </span>
+  </div>
+  <div class="row">
+    <span class="fl">Operatore esperto in CSP<small>HBP e LBBAP; la fonte lo lega a quattro advice</small></span>
+    <span class="seg">
+      <label><input type="radio" name="oper" value="si"><span>sì</span></label>
+      <label><input type="radio" name="oper" value="no"><span>no</span></label>
+    </span>
+  </div>
+  <div class="row" id="rigaSeduta">
+    <span class="fl">HBP e ablazione del nodo<small>per il backup nel pace-and-ablate</small></span>
+    <span class="seg">
+      <label><input type="radio" name="seduta" value="stessa"><span>nella stessa seduta</span></label>
+      <label><input type="radio" name="seduta" value="separata"><span>in tempi separati</span></label>
+    </span>
+  </div>
+  <label class="chk"><input type="checkbox" id="semplice"><span>Serve un dispositivo più semplice<small>paziente fragile, aspettativa di vita limitata, dispositivo più piccolo</small></span></label>
+  <div class="due">
+    <label class="chk"><input type="checkbox" id="dip"><span>Dipendenza dal pacing</span></label>
+    <label class="chk"><input type="checkbox" id="soglia"><span>Soglia di cattura alta<small>con l'HBP</small></span></label>
+    <label class="chk"><input type="checkbox" id="sensing"><span>Problemi di sensing<small>onde R piccole, P lontane rilevate</small></span></label>
+  </div>
+</div>
+
+<div class="stage"><span class="stage-n">→</span><span class="stage-t">Che cosa fare</span><span class="stage-w">EHRA/ESC 2025</span></div>
+<div class="card" id="outMod"></div>
+<div class="card" id="outTipo"></div>
+<div class="card" id="outBackup"></div>
+<div class="card" id="outDopo"></div>
+<div class="card" id="outSempre"></div>
+
+<div class="card"><h3>Incoerenze della fonte toccate da questo caso</h3><div id="outInc"></div></div>
+<div class="card"><h3>Confini con le altre linee guida del progetto</h3><div id="outConf"></div></div>
+<div class="card"><h3>Limiti per questo paziente</h3><ul class="lista" id="limiti"></ul></div>
+
+<div class="foot">
+  <strong>Fonte.</strong> Glikson M, Burri H, et al. ESC clinical consensus statement on indications for conduction system pacing, with special contribution of the EHRA (EHRA/ESC 2025). <em>Europace</em> 2025;27:euaf050 (doi 10.1093/europace/euaf050) — scala delle advice e della forza dell'evidenza (legenda, p. 3); formazione (advice p. 4); HBP contro LBBAP (Tab. 1, p. 7; Tab. 2, p. 8; testo pp. 6–8; advice p. 9); blocco AV (testo pp. 9–12, Fig. 5 p. 11, advice p. 12); ablazione del nodo AV (testo pp. 12–14, Tab. 3 p. 13, Fig. 7 p. 14, advice p. 15); disfunzione sinusale (p. 15); scompenso senza indicazione al pacing (testo pp. 15–17, Fig. 8 p. 17, advice p. 18); HOT/LOT-CRT (pp. 18–19, Tab. 4 p. 19, advice p. 20); upgrade e PICM (pp. 20–21, advice p. 21); decisione condivisa (advice p. 22). Pagine dell'articolo.<br><br>
+  <strong>Confini.</strong> 2021 ESC Guidelines on cardiac pacing and cardiac resynchronization therapy, <em>Eur Heart J</em> 2021;42:3427–3520 — raccomandazioni sull'HBP (p. 43). 2026 ESC Guidelines for the management of heart failure — definizione di HFrEF (p. 16), Recommendation Table 7 e § 6.2.3 (CRT e pacing del sistema di conduzione, p. 41), fibrillazione atriale (p. 60). Dichiarati, non calcolati.<br><br>
+  Strumento personale di studio e consultazione: <strong>non sostituisce il giudizio clinico</strong>. È un consensus di esperti, non una linea guida: le categorie non si convertono in classi. Il supplementare del consensus (Tab. S1–S9) non è stato usato. Non salva i dati e non li invia in rete.
+</div>
+
+</div>
+<script>
+(function () {
+  "use strict";
+
+  /* ═══ DATI ═══════════════════════════════════════════════════════════════
+     ESC clinical consensus statement on indications for conduction system
+     pacing (EHRA/ESC 2025), Europace 2025;27:euaf050. Pagine dell'articolo.
+
+     Scala (legenda, p. 3). Categoria: TO DO · MAY BE (may be appropriate TO
+     DO) · NOT TO DO · INCERTO (areas of uncertainty: nessun advice possibile).
+     Forza dell'evidenza: dati pubblicati su tre gradini, un puzzle con 4, 2 o
+     1 tessera scura (RCT alta qualità · RCT · osservazionali), oppure opinione
+     di esperti col consenso (>90% agree · >70% agree). Per le aree di
+     incertezza il consenso riguarda la rilevanza del tema (nota #, p. 3).
+
+     Le 28 advice, categoria ed evidenza contate sulle icone vettoriali:
+       p. 4  formazione e verifica del tipo di cattura ........... TO DO   >90%
+       p. 9  centri capaci di HBP, LBBAP e BiVP ................... TO DO   >90%
+       p. 9  LBBAP preferito con valvulopatia aortica significativa,
+             blocco infranodale o AVNA ............................ TO DO   osservazionali
+       p. 9  HBP preferito se la tricuspide va risparmiata (dopo
+             chirurgia o riparazione transcatetere) ............... TO DO   osservazionali
+       p. 12 BAV, BiVP voluta, seno coronarico fallito: CSP ....... TO DO   >90%
+       p. 12 LVEF >40% e pacing atteso >20%: CSP .................. MAY BE  RCT
+       p. 12 BAV, LVEF <40%, pacing >20%: CSP in luogo della BiVP . MAY BE  osservazionali
+       p. 12 BAV, pacing atteso <20%: CSP con minimizzazione ...... MAY BE  >90%
+       p. 12 dispositivo piu' semplice: CSP invece della BiVP ..... MAY BE  >90%
+       p. 12 BAV, LVEF <40%, pacing >20%: evitare il RVP .......... NOT TO DO  RCT alta qualità
+       p. 15 AVNA, seno coronarico fallito: CSP ................... TO DO   >90%
+       p. 15 AVNA con HBP: elettrocatetere di backup .............. MAY BE  >90%
+       p. 15 AVNA: LBBAP preferito all'HBP ........................ MAY BE  >90%
+       p. 15 AVNA, LVEF >40%: CSP in luogo di RVP o BiVP .......... MAY BE  osservazionali
+       p. 15 AVNA, LVEF ≤40%: CSP in luogo della BiVP ............. MAY BE  osservazionali
+       p. 15 dispositivo piu' semplice ............................ MAY BE  >90%
+       p. 18 candidato a BiVP, seno coronarico fallito: CSP ....... TO DO   osservazionali
+       p. 18 LVEF ≤35%, BBS con QRS ≥130 ms, NYHA II-IV: CSP ...... MAY BE  RCT
+       p. 18 non-responder alla BiV-CRT: CSP ...................... MAY BE  >90%
+       p. 18 dispositivo piu' semplice ............................ MAY BE  >90%
+       p. 18 indicazione a CRT e non-BBS: impatto del CSP ......... INCERTO >90%
+       p. 18 scompenso con LVEF >35% senza indicazione al pacing .. INCERTO >90%
+       p. 20 HOT/LOT-CRT all'impianto, ECG subottimale ............ MAY BE  osservazionali
+       p. 20 HOT/LOT-CRT come upgrade ............................. MAY BE  osservazionali
+       p. 21 valutare regolarmente il bisogno di upgrade .......... TO DO   >90%
+       p. 21 PICM: upgrade a CSP .................................. MAY BE  osservazionali
+       p. 21 upgrade: tenere tutti gli elettrocateteri ............ MAY BE  >90%
+       p. 22 CSP dentro una decisione condivisa ................... TO DO   >90%       */
+  var ADV = {  // id: [categoria, evidenza, pagina, testo]
+    formazione: ["TO DO", ">90% agree", 4, "il CSP lo impianta chi ha una formazione adeguata, verificando ogni volta il tipo di cattura ottenuto (HBP selettivo o no, LBBP, pacing fascicolare, del setto)"],
+    centri:     ["TO DO", ">90% agree", 9, "un centro che impianta CSP dovrebbe saper fare HBP e LBBAP, e anche la BiVP"],
+    lbbapP9:    ["TO DO", "osservazionali", 9, "con valvulopatia aortica significativa (che può richiedere un intervento), blocco infranodale o ablazione del nodo AV, è consigliato preferire il LBBAP all'HBP"],
+    hbpP9:      ["TO DO", "osservazionali", 9, "se la tricuspide va risparmiata (dopo chirurgia o riparazione transcatetere) è consigliato preferire l'HBP al LBBAP"],
+    salvBav:    ["TO DO", ">90% agree", 12, "nel BAV in cui si vuole la BiVP, se l'elettrocatetere in seno coronarico non si impianta è consigliato il CSP come salvataggio"],
+    bavFe40:    ["MAY BE", "RCT", 12, "con LVEF >40% e pacing ventricolare atteso >20% può essere appropriato il CSP"],
+    bavMeno40:  ["MAY BE", "osservazionali", 12, "nel BAV con LVEF <40% e pacing atteso >20% può essere appropriato il CSP in luogo della BiVP"],
+    bavMvp:     ["MAY BE", ">90% agree", 12, "nel BAV con pacing atteso infrequente (<20%) può essere appropriato il CSP con le strategie di minimizzazione, per avere un pacing fisiologico se il disturbo progredisce"],
+    semplBav:   ["MAY BE", ">90% agree", 12, "quando serve un dispositivo più semplice può essere appropriato scegliere il CSP invece della BiVP come strategia primaria, tenendo conto dell'esperienza dell'operatore"],
+    noRvp:      ["NOT TO DO", "RCT alta qualità", 12, "nel BAV con LVEF <40% e pacing atteso frequente (>20%) è consigliato evitare il pacing ventricolare destro"],
+    salvAvna:   ["TO DO", ">90% agree", 15, "se l'elettrocatetere in seno coronarico non si impianta è consigliato il CSP come salvataggio"],
+    backupAvna: ["MAY BE", ">90% agree", 15, "con l'HBP come strategia primaria nel pace-and-ablate può essere appropriato un elettrocatetere ventricolare di backup, per sicurezza, tenendo conto dell'esperienza dell'operatore e se le due procedure sono contestuali o separate"],
+    lbbapP15:   ["MAY BE", ">90% agree", 15, "nell'ablazione del nodo AV programmata può essere appropriato preferire il LBBAP all'HBP: ablazione più semplice, niente rialzo della soglia né ritorno della conduzione AV, nessun bisogno di backup"],
+    avnaFe40:   ["MAY BE", "osservazionali", 15, "con LVEF >40% e ablazione del nodo AV può essere appropriato il CSP in luogo di RVP o BiVP, per conservare la funzione ventricolare e migliorare i sintomi"],
+    avnaMeno40: ["MAY BE", "osservazionali", 15, "con LVEF ≤40% e ablazione del nodo AV può essere appropriato il CSP in luogo della BiVP, per migliorare la funzione ventricolare e i sintomi"],
+    semplAvna:  ["MAY BE", ">90% agree", 15, "quando serve un dispositivo più semplice può essere appropriato scegliere il CSP invece della BiVP come strategia primaria, tenendo conto dell'esperienza dell'operatore"],
+    salvCrt:    ["TO DO", "osservazionali", 18, "nel candidato alla BiVP in cui l'elettrocatetere in seno coronarico non si impianta è consigliato il CSP come terapia di salvataggio"],
+    crtBbs:     ["MAY BE", "RCT", 18, "con LVEF ≤35%, BBS con QRS ≥130 ms e sintomi di classe II–IV nonostante la terapia raccomandata, il CSP può essere appropriato in alternativa alla BiVP"],
+    nonResp:    ["MAY BE", ">90% agree", 18, "nei non-responder alla BiV-CRT può essere appropriato impiantare il CSP, per i sintomi e la LVEF"],
+    semplCrt:   ["MAY BE", ">90% agree", 18, "quando serve un dispositivo più semplice può essere appropriato scegliere il CSP invece della BiVP come strategia primaria, tenendo conto dell'esperienza dell'operatore"],
+    nonBbs:     ["INCERTO", ">90% agree", 18, "con indicazione a CRT e QRS non-BBS l'impatto clinico del CSP è incerto"],
+    fe35:       ["INCERTO", ">90% agree", 18, "nello scompenso con LVEF >35% senza indicazione al pacing ventricolare l'impatto clinico del CSP è incerto"],
+    hotImp:     ["MAY BE", "osservazionali", 20, "con un ECG subottimale del CSP o della BiVP all'impianto può essere appropriato proporre la HOT/LOT-CRT, tenendo conto dell'esperienza dell'operatore e del rischio del paziente"],
+    hotUpg:     ["MAY BE", "osservazionali", 20, "nel candidato a CRT con risultato clinico ed elettrocardiografico subottimale della CSP-CRT o della BiV-CRT può essere appropriata la HOT/LOT-CRT come upgrade, soprattutto con ritardo aspecifico o malattia di conduzione mista"],
+    valuta:     ["TO DO", ">90% agree", 21, "il bisogno di upgrade si valuta regolarmente, e soprattutto prima della sostituzione elettiva del generatore: quota di pacing, sintomi, LVEF, BNP, rischio di infezione, fragilità"],
+    picm:       ["MAY BE", "osservazionali", 21, "nella PICM può essere appropriato l'upgrade a CSP, per i sintomi e la LVEF, soprattutto con sistema His-Purkinje integro (QRS stretto o blocco nodale)"],
+    tieni:      ["MAY BE", ">90% agree", 21, "nell'upgrade a CSP può essere appropriato collegare tutti gli elettrocateteri invece di abbandonare quello ventricolare esistente: dà un pacing di backup e facilita la compatibilità con la risonanza"],
+    condivisa:  ["TO DO", ">90% agree", 22, "il CSP entra in una decisione condivisa, che dica la novità della procedura, la mancanza di grandi RCT e di follow-up lungo, e le alternative"]
+  };
+  var EVL = { "RCT alta qualità":"RCT di alta qualità", "RCT":"RCT", "osservazionali":"osservazionali", ">90% agree":"consenso >90%", ">70% agree":"consenso >70%" };
+
+  /* Le tre figure, ramo per ramo, con l'icona letta sulla figura. Una
+     modalita' assente dal ramo vale null: la figura non le da' categoria.
+     Fig. 5, p. 11 (BAV):
+       pacing atteso <20%  ->  RVP + MVP  TO DO   ·  CSP* + MVP  MAY BE
+       >=20%, LVEF <=40%   ->  BiVP†  TO DO  ·  CSP*  MAY BE  ·  RVP  NOT TO DO
+                               sotto BiVP e CSP: QRS stimolato largo -> HOT/LOT-CRT MAY BE
+       >=20%, LVEF 41-50%  ->  RVP, BiVP†, CSP*  MAY BE (un'icona sola)
+       >=20%, LVEF >50%    ->  CSP* o RVP  MAY BE
+       * blocco infranodale: LBBAP preferito, o HBP con backup
+       † CSP consigliato se il seno coronarico fallisce
+     Fig. 7, p. 14 (AVNA):
+       LVEF <=40%   ->  BiVP  TO DO  ·  CSP*  MAY BE; sotto, due riquadri senza freccia
+                       fra loro: QRS largo -> HOT/LOT-CRT MAY BE; seno coronarico
+                       fallito -> CSP TO DO
+       LVEF 41-50%  ->  BiVP  MAY BE  ·  CSP*  MAY BE
+       LVEF >50%    ->  CSP*  MAY BE  ·  RVP  TO DO
+       * LBBAP preferito, o HBP con backup
+     Fig. 8, p. 17 (indicazione a CRT):
+       BBS, LVEF <=35%        ->  BiVP  TO DO  ·  CSP  MAY BE
+       BBS, LVEF 36-50%       ->  BiVP o CSP  INCERTO
+       non-BBS, LVEF <=35%    ->  BiVP  MAY BE  ·  CSP  INCERTO
+       non-BBS, LVEF 36-50%   ->  BiVP o CSP  INCERTO
+       PICM*                  ->  BiVP  TO DO  ·  CSP  MAY BE
+       non risposta alla BiV-CRT -> CSP  MAY BE
+       barra sotto tutte le colonne: QRS largo -> HOT/LOT-CRT MAY BE
+       riquadro a se': seno coronarico fallito -> CSP TO DO
+       * piu' definizioni di PICM; le prove sono soprattutto per la BiVP con LVEF <=35% */
+  var R5 = {
+    meno20: { via:"BAV → pacing ventricolare atteso <20%", op:{
+        CSP:{ cat:"MAY BE", det:"CSP* con minimizzazione del pacing ventricolare (MVP)", adv:["bavMvp"] },
+        BiVP:null,
+        RVP:{ cat:"TO DO", det:"RVP con minimizzazione del pacing ventricolare (MVP)" } },
+      cambia:"se la quota attesa sale a ≥20% decide la LVEF: con LVEF ≤40% la BiVP diventa TO DO e il RVP NOT TO DO" },
+    fe40: { via:"BAV → pacing atteso ≥20% → LVEF ≤40%", op:{
+        CSP:{ cat:"MAY BE", det:"CSP* in luogo della BiVP", adv:["bavMeno40"] },
+        BiVP:{ cat:"TO DO", det:"BiVP†", dag:true },
+        RVP:{ cat:"NOT TO DO", det:"RVP da evitare", adv:["noRvp"] } },
+      hotlot:true,
+      cambia:"sopra il 40% nessuna modalità è TO DO: con LVEF 41–50% RVP, BiVP e CSP sono tutte MAY BE" },
+    fe4150: { via:"BAV → pacing atteso ≥20% → LVEF 41–50%", op:{
+        CSP:{ cat:"MAY BE", det:"CSP*", adv:["bavFe40"] },
+        BiVP:{ cat:"MAY BE", det:"BiVP†", dag:true },
+        RVP:{ cat:"MAY BE", det:"RVP" } },
+      cambia:"con LVEF ≤40% la BiVP diventa TO DO e il RVP NOT TO DO; sopra il 50% la BiVP esce dalla figura" },
+    fe50: { via:"BAV → pacing atteso ≥20% → LVEF >50%", op:{
+        CSP:{ cat:"MAY BE", det:"CSP*", adv:["bavFe40"] },
+        BiVP:null,
+        RVP:{ cat:"MAY BE", det:"RVP" } },
+      cambia:"con LVEF 41–50% entra anche la BiVP, MAY BE; con pacing atteso <20% il RVP con minimizzazione diventa TO DO" }
+  };
+  var R7 = {
+    fe40: { via:"ablazione del nodo AV → LVEF ≤40%", op:{
+        CSP:{ cat:"MAY BE", det:"CSP* in luogo della BiVP", adv:["avnaMeno40"] },
+        BiVP:{ cat:"TO DO", det:"BiVP" },
+        RVP:null },
+      hotlot:true, scBox:true,
+      cambia:"sopra il 40% la BiVP scende a MAY BE; sopra il 50% il RVP entra come TO DO" },
+    fe4150: { via:"ablazione del nodo AV → LVEF 41–50%", op:{
+        CSP:{ cat:"MAY BE", det:"CSP*", adv:["avnaFe40"] },
+        BiVP:{ cat:"MAY BE", det:"BiVP" },
+        RVP:null },
+      cambia:"con LVEF ≤40% la BiVP diventa TO DO; sopra il 50% il RVP entra come TO DO e la BiVP esce dalla figura" },
+    fe50: { via:"ablazione del nodo AV → LVEF >50%", op:{
+        CSP:{ cat:"MAY BE", det:"CSP* in luogo del RVP", adv:["avnaFe40"] },
+        BiVP:null,
+        RVP:{ cat:"TO DO", det:"RVP" } },
+      cambia:"con LVEF 41–50% il RVP esce dalla figura e la BiVP entra come MAY BE" }
+  };
+  var R8 = {
+    bbs35: { via:"indicazione a CRT → BBS → LVEF ≤35%", op:{
+        CSP:{ cat:"MAY BE", det:"CSP in alternativa alla BiVP", adv:["crtBbs"] },
+        BiVP:{ cat:"TO DO", det:"BiVP" },
+        RVP:null },
+      cambia:"sopra il 35% BiVP e CSP diventano area di incertezza; con un QRS non-BBS la BiVP scende a MAY BE e il CSP è incerto" },
+    bbs3650: { via:"indicazione a CRT → BBS → LVEF 36–50%", op:{
+        CSP:{ cat:"INCERTO", det:"«BiVP o CSP», area di incertezza", adv:["fe35"] },
+        BiVP:{ cat:"INCERTO", det:"«BiVP o CSP», area di incertezza" },
+        RVP:null },
+      cambia:"con LVEF ≤35% la BiVP diventa TO DO e il CSP MAY BE; sopra il 50% la figura non dà categorie" },
+    nb35: { via:"indicazione a CRT → non-BBS → LVEF ≤35%", op:{
+        CSP:{ cat:"INCERTO", det:"CSP, area di incertezza", adv:["nonBbs"] },
+        BiVP:{ cat:"MAY BE", det:"BiVP" },
+        RVP:null },
+      cambia:"con un BBS la BiVP diventa TO DO e il CSP MAY BE; sopra il 35% anche la BiVP diventa area di incertezza" },
+    nb3650: { via:"indicazione a CRT → non-BBS → LVEF 36–50%", op:{
+        CSP:{ cat:"INCERTO", det:"«BiVP o CSP», area di incertezza", adv:["nonBbs", "fe35"] },
+        BiVP:{ cat:"INCERTO", det:"«BiVP o CSP», area di incertezza" },
+        RVP:null },
+      cambia:"con LVEF ≤35% la BiVP sale a MAY BE; nel non-BBS il CSP resta area di incertezza" },
+    picm: { via:"indicazione a CRT → PICM*", op:{
+        CSP:{ cat:"MAY BE", det:"upgrade a CSP", adv:["picm"] },
+        BiVP:{ cat:"TO DO", det:"upgrade a BiVP" },
+        RVP:null },
+      cambia:"nella figura la categoria non cambia con la LVEF; per la nota * le prove per la BiVP sono soprattutto con LVEF ≤35%" },
+    nonresp: { via:"indicazione a CRT → non risposta alla BiV-CRT", op:{
+        CSP:{ cat:"MAY BE", det:"CSP", adv:["nonResp"] },
+        BiVP:null,
+        RVP:null },
+      cambia:"la figura non ha altri rami per il non-responder" }
+  };
+  var FIGURE = {  // figura, pagina della figura, pagina delle advice
+    bav:  { fig:"Fig. 5", p:11, advP:12, rami:R5 },
+    avna: { fig:"Fig. 7", p:14, advP:15, rami:R7 },
+    crt:  { fig:"Fig. 8", p:17, advP:18, rami:R8 }
+  };
+  var SOGLIE = {
+    fe40: 40,   // Fig. 5 p. 11 e Fig. 7 p. 14: <=40 / 41-50 / >50; advice p. 12: <40 e >40; advice p. 15: <=40 e >40
+    fe50: 50,   // Fig. 5, 7 e 8: oltre il 50% la BiVP esce (Fig. 5, 7); la Fig. 8 si ferma al 50%
+    fe35: 35,   // Fig. 8 p. 17: <=35 / 36-50; advice p. 18: LVEF <=35% (BBS) e >35% (incerto)
+    qrs: 130    // advice p. 18: BBS con QRS >=130 ms
+  };
+  var DOM = { fe:[5, 80], qrs:[60, 300] }; // limiti di plausibilita' dello strumento, non della fonte
+  var MOD = ["CSP", "BiVP", "RVP"];
+  var ORD = { "TO DO":0, "MAY BE":1, "INCERTO":2, "NOT TO DO":3 };
+
+  /* ═══ FUNZIONI PURE ═══════════════════════════════════════════════════ */
+  function pulisci(s) {
+    var c = {}, k; for (k in s) if (s.hasOwnProperty(k)) c[k] = s[k];
+    c.fuoriDom = [];
+    for (k in DOM) if (DOM.hasOwnProperty(k) && c[k] !== null && c[k] !== undefined && (c[k] < DOM[k][0] || c[k] > DOM[k][1])) { c.fuoriDom.push(k); c[k] = null; }
+    // i campi che lo scenario non usa non entrano nella decisione
+    if (c.scen !== "bav") c.vp = "";
+    if (c.scen === "snd" || c.scen === "nonresp") c.fe = null;
+    if (!(c.scen === "crt" || c.scen === "picm" || c.scen === "nonresp" || c.scen === "avna")) c.morf = "";
+    if (c.scen !== "crt") c.qrs = null;
+    if (!(c.scen === "bav" || c.scen === "picm")) c.sede = "";
+    if (c.scen !== "avna") c.seduta = "";
+    return c;
+  }
+  function scompenso(s) { return s.scen === "crt" || s.scen === "picm" || s.scen === "nonresp"; }
+
+  // il ramo della figura in cui cade il paziente
+  function ramo(s) {
+    if (!s.scen) return { perche:"scegliere lo scenario" };
+    if (s.scen === "snd") return { snd:true, perche:"nella disfunzione sinusale la fonte ha deciso di non formulare advice, per la scarsità dei dati" };
+    if (s.scen === "bav") {
+      if (!s.vp) return { perche:"indicare la quota di pacing ventricolare atteso: la Fig. 5 si divide lì" };
+      if (s.vp === "meno20") return { f:FIGURE.bav, k:"meno20" };
+      if (s.fe === null) return { perche:"serve la LVEF: con pacing atteso ≥20% la Fig. 5 divide in ≤40%, 41–50% e >50%" };
+      return { f:FIGURE.bav, k:s.fe <= SOGLIE.fe40 ? "fe40" : s.fe <= SOGLIE.fe50 ? "fe4150" : "fe50" };
+    }
+    if (s.scen === "avna") {
+      if (s.fe === null) return { perche:"serve la LVEF: la Fig. 7 divide in ≤40%, 41–50% e >50%" };
+      return { f:FIGURE.avna, k:s.fe <= SOGLIE.fe40 ? "fe40" : s.fe <= SOGLIE.fe50 ? "fe4150" : "fe50" };
+    }
+    if (s.scen === "picm") return { f:FIGURE.crt, k:"picm" };
+    if (s.scen === "nonresp") return { f:FIGURE.crt, k:"nonresp" };
+    // candidato a CRT
+    if (!s.morf) return { perche:"indicare il QRS nativo: la Fig. 8 si divide fra BBS e non-BBS" };
+    if (s.morf === "stretto") return { fuori:true, perche:"con QRS nativo stretto la Fig. 8 non ha un ramo: parte da un'indicazione a CRT, che il QRS stretto senza indicazione al pacing non dà" };
+    if (s.fe === null) return { perche:"serve la LVEF: la Fig. 8 divide in ≤35% e 36–50%" };
+    if (s.fe > SOGLIE.fe50) return { fuori:true, perche:"con LVEF " + s.fe + "% la Fig. 8 non dà categorie: si ferma al 50%" };
+    var bbs = s.morf === "bbs";
+    return { f:FIGURE.crt, k:(bbs ? "bbs" : "nb") + (s.fe <= SOGLIE.fe35 ? "35" : "3650") };
+  }
+
+  // una advice vale per questo paziente? (le condizioni scritte nella riga)
+  function advVale(id, s) {
+    if (id === "bavMeno40" || id === "noRvp") {
+      if (s.fe < SOGLIE.fe40) return { ok:true };
+      return { ok:false, perche:"l'advice di p. 12 dice LVEF &lt;40%: al 40% esatto nessuna advice copre il caso, e la categoria viene dalla sola figura (≤40%)" };
+    }
+    if (id === "bavFe40" || id === "avnaFe40") return s.fe > SOGLIE.fe40 ? { ok:true } : { ok:false, perche:"l'advice chiede LVEF &gt;40%" };
+    if (id === "avnaMeno40") return s.fe <= SOGLIE.fe40 ? { ok:true } : { ok:false, perche:"l'advice chiede LVEF ≤40%" };
+    if (id === "crtBbs") {
+      if (s.qrs === null) return { ok:"cond", perche:"vale con QRS ≥130 ms e sintomi di classe NYHA II–IV nonostante la terapia raccomandata: la durata del QRS non è indicata" };
+      if (s.qrs < SOGLIE.qrs) return { ok:false, perche:"QRS " + s.qrs + " ms: l'advice di p. 18 chiede QRS ≥130 ms, e il caso ne resta fuori" };
+      return { ok:true, cond:"con sintomi di classe NYHA II–IV nonostante la terapia raccomandata" };
+    }
+    return { ok:true };
+  }
+
+  // per CSP, BiVP e RVP: categoria, advice che la sostengono, e da dove viene
+  function modalita(s) {
+    var r = ramo(s), o = { r:r, m:{} };
+    if (!r.f) return o;
+    var d = r.f.rami[r.k];
+    o.d = d;
+    for (var i = 0; i < MOD.length; i++) {
+      var m = MOD[i], x = d.op[m];
+      if (!x) { o.m[m] = { fuori:true }; continue; }
+      var a = [];
+      if (x.adv) for (var j = 0; j < x.adv.length; j++) {
+        var id = x.adv[j], v = advVale(id, s);
+        a.push({ id:id, cat:ADV[id][0], ev:ADV[id][1], p:ADV[id][2], ok:v.ok, perche:v.perche, cond:v.cond });
+      }
+      o.m[m] = { cat:x.cat, det:x.det, dag:!!x.dag, adv:a };
+    }
+    return o;
+  }
+
+  // HBP o LBBAP (Tab. 2, p. 8; advice p. 9 e p. 15; note delle Fig. 5 e 7)
+  function tipo(s) {
+    var o = { righe:[], esito:null };
+    if (!s.scen) { o.perche = "scegliere lo scenario"; return o; }
+    function r(verso, t, fonte, adv) { o.righe.push({ verso:verso, t:t, fonte:fonte, adv:adv || null }); }
+    if (s.aorta === "malattia" || s.aorta === "programmato") r("LBBAP", "valvulopatia aortica significativa, che può richiedere un intervento", "", "lbbapP9");
+    if (s.aorta === "programmato" || s.aorta === "pregresso") r("LBBAP", "TAVI o chirurgia aortica " + (s.aorta === "programmato" ? "programmata" : "pregressa") + ": il LBBAP «può essere preferito», per opinione del gruppo di scrittura; l'HBP ha soglie più alte e riesce meno dopo sostituzione valvolare aortica", "Tab. 2, p. 8; p. 8");
+    if (s.sede === "infranodale") {
+      r("LBBAP", "blocco infranodale", "", "lbbapP9");
+      r("LBBAP", "blocco infranodale: il LBBAP «può essere preferito»; l'HBP riesce meno che nel blocco nodale (76% contro 93%)", "Tab. 2, p. 8; p. 11");
+      if (s.scen === "bav") r("LBBAP", "nota * della figura: nel blocco infranodale la modalità di CSP preferita è il LBBAP, <b>oppure l'HBP con un elettrocatetere di backup</b>", "Fig. 5, p. 11");
+    }
+    if (s.scen === "avna") {
+      r("LBBAP", "ablazione del nodo AV", "", "lbbapP9");
+      r("LBBAP", "ablazione del nodo AV", "", "lbbapP15");
+      r("LBBAP", "ablazione del nodo AV programmata: il LBBAP «può essere preferito»; il testo lo dice l'opzione di CSP preferita, per l'ablazione più difficile, il rialzo della soglia, il ritorno della conduzione AV e il backup che l'HBP richiede", "Tab. 2, p. 8; p. 14");
+      r("LBBAP", "nota * della figura: LBBAP preferito, <b>oppure HBP con un elettrocatetere di backup</b>", "Fig. 7, p. 14");
+    }
+    if (s.tric === "intervento") {
+      r("HBP", "tricuspide da risparmiare, dopo chirurgia o riparazione transcatetere", "", "hbpP9");
+      r("HBP", "protesi, disfunzione o riparazione transcatetere della tricuspide: l'HBP «può essere preferito»; col LBBAP il rigurgito tricuspidale peggiora fino in un terzo dei pazienti", "Tab. 2, p. 8; p. 8");
+    }
+    if (s.tric === "disfunzione") r("HBP", "disfunzione della tricuspide: l'HBP «può essere preferito»; col LBBAP il rigurgito tricuspidale peggiora fino in un terzo dei pazienti", "Tab. 2, p. 8; p. 8");
+    if (s.sede === "nodale") r("entrambi", "blocco AV nodale: HBP o LBBAP entrambi adatti", "Tab. 2, p. 8");
+    if (scompenso(s)) r("entrambi", "indicazione per scompenso: HBP o LBBAP entrambi adatti", "Tab. 2, p. 8");
+    // salvataggio: Tab. 2, l'altra tecnica
+    if (s.esito === "lbbapko") { o.esito = "HBP"; o.salv = true; o.salvT = "LBBAP non riuscito o insoddisfacente (per esempio una cicatrice settale): l'HBP come salvataggio"; }
+    else if (s.esito === "hbpko") { o.esito = "LBBAP"; o.salv = true; o.salvT = "HBP non riuscito o insoddisfacente: il LBBAP come salvataggio"; }
+    else {
+      var L = false, H = false, E = false;
+      for (var i = 0; i < o.righe.length; i++) { if (o.righe[i].verso === "LBBAP") L = true; else if (o.righe[i].verso === "HBP") H = true; else E = true; }
+      o.esito = L && H ? "conflitto" : L ? "LBBAP" : H ? "HBP" : E ? "entrambi" : "libera";
+    }
+    o.tab2 = false;
+    for (var k = 0; k < o.righe.length; k++) if (o.righe[k].fonte.indexOf("Tab. 2") === 0) o.tab2 = true;
+    if (o.salv) o.tab2 = true;
+    return o;
+  }
+
+  // elettrocatetere di backup (Tab. 1 p. 7; testo p. 11 e nota a p. 12; Tab. 3 p. 13; testo p. 14; advice p. 15 e p. 21)
+  function backup(s) {
+    var o = { righe:[], chip:["kx", "—"] };
+    if (!s.scen) { o.perche = "scegliere lo scenario"; return o; }
+    var fatt = [];
+    if (s.scen === "avna") fatt.push("ablazione del nodo AV");
+    if (s.dip) fatt.push("dipendenza dal pacing");
+    if (s.soglia) fatt.push("soglia di cattura alta");
+    if (s.sensing) fatt.push("sensing scarso");
+    o.fatt = fatt;
+    if (s.scen === "avna") {
+      o.adv = "backupAvna";
+      if (s.oper === "si" && s.seduta === "stessa") o.avna = "puo";
+      else if (s.oper === "" || s.seduta === "") o.avna = "manca";
+      else o.avna = "utile";
+      o.chip = ["k2", "HBP · MAY BE"];
+    } else if (s.scen === "picm" || s.scen === "nonresp") {
+      o.upg = "tieni";
+      o.chip = ["k2", "upgrade · MAY BE"];
+    } else if (s.scen === "bav" && (s.sede === "infranodale" || s.sensing)) {
+      o.bav = true; o.chip = ["k1", "HBP · utile"];
+    } else if (fatt.length) {
+      o.chip = ["k1", "HBP · Tab. 1"];
+    } else {
+      o.chip = ["kx", "nessun sottogruppo"];
+    }
+    if (s.scen === "bav" && !o.bav) o.bavGen = true;
+    return o;
+  }
+
+  // dopo l'impianto: seno coronarico fallito, QRS largo, salvataggio fra HBP e LBBAP
+  function dopo(s, mo) {
+    var o = { righe:[] };
+    if (!s.scen) { o.perche = "scegliere lo scenario"; return o; }
+    if (s.scen === "snd") { o.perche = "nessuna advice per la disfunzione sinusale"; return o; }
+    var salv = { bav:"salvBav", avna:"salvAvna", crt:"salvCrt", picm:"salvCrt" }[s.scen] || null;
+    o.salvId = salv;
+    var bivInRamo = !!(mo.d && mo.d.op.BiVP);
+    if (s.esito === "sc") {
+      if (s.scen === "nonresp") o.incongruo = "il non-responder alla BiV-CRT ha già un elettrocatetere in seno coronarico: l'esito indicato non si applica";
+      else o.sc = true;
+    } else if (s.esito === "qrs") {
+      o.qrs = true;
+    } else if (s.esito === "lbbapko" || s.esito === "hbpko") {
+      o.bail = true;
+    } else {
+      o.seSc = !!salv && (bivInRamo || !mo.d);
+      o.seQrs = true;
+    }
+    return o;
+  }
+
+  function incoerenze(s, mo, tp, bk, dp) {
+    var L = [];
+    if (s.scen === "avna")
+      L.push("La preferenza per il LBBAP nell'ablazione del nodo AV ha <b>due categorie</b>: " + advPill("lbbapP9") + " fra le advice HBP contro LBBAP, " + advPill("lbbapP15") + " fra quelle dell'ablazione; il testo di p. 14 la dice senza riserve «l'opzione preferita». <b>Due letture:</b> (1) vale la TO DO, più forte e con dati; (2) vale la MAY BE, scritta per questo scenario. Lo strumento le mostra entrambe e non sceglie." + pgs(E + "advice p. 9; advice p. 15; p. 14"));
+    if (s.scen === "bav" && mo.r.k === "fe40" && s.fe === SOGLIE.fe40)
+      L.push("<b>Il confine del 40%.</b> La Fig. 5 taglia a ≤40% e 41–50%; le advice di p. 12 scrivono LVEF &lt;40% (CSP in luogo della BiVP, evitare il RVP) e &gt;40% (CSP con pacing &gt;20%), e lasciano senza advice esattamente il 40%. Lo strumento segue la figura, come il distillato, e al 40% non mostra la forza dell'evidenza: nessuna advice la porta." + pgs(E + "Fig. 5, p. 11; advice p. 12"));
+    if (dp.sc)
+      L.push("Il <b>CSP di salvataggio</b> quando il seno coronarico fallisce è TO DO in tre tabelle, con evidenza diversa: consenso &gt;90% nel BAV (p. 12) e nell'ablazione del nodo (p. 15), osservazionali nello scompenso (p. 18). La categoria non cambia; lo strumento mostra l'evidenza della tabella dello scenario." + pgs(E + "advice pp. 12, 15, 18"));
+    if (dp.sc && s.scen === "avna" && s.fe !== null && s.fe > SOGLIE.fe40)
+      L.push("La Fig. 7 disegna il riquadro «seno coronarico fallito → CSP» nella colonna LVEF ≤40%; l'advice di p. 15 non pone limiti di LVEF. Con LVEF " + s.fe + "% vale l'advice." + pgs(E + "Fig. 7, p. 14; advice p. 15"));
+    // Tab. 2 contro advice di p. 9: forza e perimetro
+    var forza = (s.aorta === "programmato") || s.sede === "infranodale" || s.scen === "avna" || s.tric === "intervento";
+    if (forza)
+      L.push("<b>Tab. 2 contro advice di p. 9 — la forza.</b> Per la stessa scelta la Tab. 2 dice che una tecnica «può essere preferita» ed è opinione del gruppo di scrittura; le advice di p. 9 dicono «è consigliato preferire», categoria TO DO con evidenza osservazionale. Lo strumento mostra le due righe con la loro fonte." + pgs(E + "Tab. 2, p. 8; advice p. 9"));
+    var perim = [];
+    if (s.aorta === "malattia") perim.push("la valvulopatia aortica significativa senza intervento programmato è nell'advice e non nella Tab. 2, che nomina TAVI o chirurgia aortica pregressa o programmata");
+    if (s.aorta === "pregresso") perim.push("la TAVI o la chirurgia aortica pregressa è nella Tab. 2 e non nell'advice, che parla di valvulopatia che può richiedere un intervento futuro");
+    if (s.tric === "disfunzione") perim.push("la disfunzione della tricuspide senza intervento è nella Tab. 2 e non nell'advice, che parla di tricuspide da risparmiare dopo chirurgia o riparazione transcatetere");
+    if (perim.length)
+      L.push("<b>Tab. 2 contro advice di p. 9 — il perimetro:</b> " + perim.join("; ") + ". Per questo caso vale la sola riga che lo nomina." + pgs(E + "Tab. 2, p. 8; advice p. 9"));
+    if (tp.esito === "conflitto")
+      L.push("<b>Due preferenze opposte</b> nello stesso paziente: la fonte indica il LBBAP per " + motivi(tp, "LBBAP") + " e l'HBP per " + motivi(tp, "HBP") + ", e non dice quale prevalga." + pgs(E + "Tab. 2, p. 8; advice p. 9"));
+    if (s.scen === "avna")
+      L.push("<b>Il backup con l'HBP nell'ablazione del nodo.</b> La Tab. 1 lo dice consigliato nei sottogruppi specifici, ablazione del nodo compresa, e la Tab. 3 scrive «sì» nella colonna HBP; l'advice di p. 15 lo classifica MAY BE, e il testo di p. 14 ammette che l'operatore esperto, con HBP e ablazione nella stessa seduta, ne faccia a meno. <b>Due letture:</b> (1) le tabelle descrivono la pratica e la categoria è la MAY BE; (2) «consigliato» nelle tabelle vale più della MAY BE. Lo strumento mostra la MAY BE come categoria, e le tabelle accanto." + pgs(E + "Tab. 1, p. 7; Tab. 3, p. 13; p. 14; advice p. 15"));
+    return L;
+  }
+  function motivi(tp, verso) {
+    var t = [];
+    for (var i = 0; i < tp.righe.length; i++) if (tp.righe[i].verso === verso && tp.righe[i].adv) t.push(tp.righe[i].t);
+    if (!t.length) for (var j = 0; j < tp.righe.length; j++) if (tp.righe[j].verso === verso) { t.push(tp.righe[j].t.split(":")[0]); break; }
+    return t.join(", ");
+  }
+
+  function confini(s, mo, dp) {
+    var L = [];
+    function c(anno, t, cl, lv, p, lab) { L.push({ anno:anno, t:t, cl:cl, lv:lv, p:p, lab:lab || "senza classe" }); }
+    if (s.scen === "bav") {
+      c("ESC 2021", "l'HBP può essere considerato in alternativa al pacing VD nel BAV con LVEF &gt;40% e pacing ventricolare atteso &gt;20%; nessuna raccomandazione sul LBBAP. Il consensus (2025) dà al CSP, HBP o LBBAP, MAY BE con evidenza RCT.", "IIb", "C", "ESC 2021, p. 43");
+      c("ESC 2026", "CRT anziché pacing VD nell'HFrEF — che dal 2026 vuol dire LVEF &lt;50% — con indicazione al pacing ventricolare per BAV di alto grado, a ogni classe NYHA e durata del QRS. La Fig. 5 taglia al 40% e dà alla BiVP TO DO solo con LVEF ≤40%.", "IIa", "B1", "ESC 2026, p. 41; definizione di HFrEF, p. 16");
+    }
+    if (s.scen === "avna") {
+      c("ESC 2021", "HBP con un elettrocatetere ventricolare di backup può essere considerato nel pace-and-ablate per un'aritmia sopraventricolare a conduzione rapida, soprattutto con QRS intrinseco stretto.", "IIb", "C", "ESC 2021, p. 43");
+      c("ESC 2026", "ablazione del nodo AV con CRT nella FA permanente molto sintomatica, con controllo della frequenza insufficiente nonostante la terapia e almeno un ricovero per scompenso; la riga non pone una soglia di LVEF, la Fig. 7 dà alla BiVP TO DO solo con LVEF ≤40%.", "IIa", "B1", "ESC 2026, p. 60");
+    }
+    if (scompenso(s) || ((s.scen === "bav" || s.scen === "avna") && s.fe !== null && s.fe < 50))
+      c("ESC 2026", "nessuna raccomandazione sul CSP nell'HFrEF (LVEF &lt;50%): nessun RCT con esiti centrati sul paziente; il LBBAP potrebbe rivelarsi un'alternativa praticabile quando la CRT è difficile da impiantare. Il consensus (2025) dà al CSP categorie proprie.", null, null, "ESC 2026, p. 41");
+    if (s.scen === "crt")
+      c("ESC 2026", "l'indicazione alla CRT, da cui parte la Fig. 8, ha classi diverse per morfologia e durata del QRS, con LVEF ≤35% e sintomi nonostante la terapia: BBS ≥150 ms I A; BBS 130–149 ms e non-BBS ≥150 ms IIa C; non-BBS 130–149 ms IIb C; QRS &lt;130 ms senza indicazione al pacing per BAV di alto grado III A.", null, null, "ESC 2026, p. 41", "classi per riga");
+    if (s.scen === "picm")
+      c("ESC 2026", "upgrade a CRT nel portatore di pacemaker o ICD con LVEF ≤35%, scompenso che peggiora nonostante la terapia e quota significativa di pacing VD.", "IIa", "B1", "ESC 2026, p. 41");
+    if (dp.sc)
+      c("ESC 2021", "nel candidato a CRT in cui l'elettrocatetere in seno coronarico non si impianta, l'HBP va considerato come opzione, insieme ad altre tecniche come l'elettrocatetere epicardico chirurgico. Il consensus (2025) dice CSP, HBP o LBBAP, TO DO.", "IIa", "B", "ESC 2021, p. 43");
+    if (s.scen && s.scen !== "snd" && (s.dip || s.soglia || s.sensing || s.sede === "infranodale" || s.scen === "avna"))
+      c("ESC 2021", "con l'HBP un elettrocatetere VD di backup va considerato in situazioni specifiche — dipendenza dal pacing, BAV di alto grado, blocco infranodale, soglia alta, ablazione della giunzione AV programmata — o per problemi di sensing.", "IIa", "C", "ESC 2021, p. 43");
+    return L;
+  }
+
+  /* ═══ STATO E DISEGNO ═════════════════════════════════════════════════ */
+  var E = "EHRA 2025, ";
+  function el(id) { return document.getElementById(id); }
+  function ck(id) { var e = el(id); return !!(e && e.checked); }
+  function num(id) {
+    var e = el(id); if (!e) return null;
+    var v = e.value.replace(",", ".").trim();
+    if (v === "") return null;
+    var n = parseFloat(v);
+    return isFinite(n) ? n : null;
+  }
+  function radio(n) { var e = document.querySelector('input[name="' + n + '"]:checked'); return e ? e.value : ""; }
+  function pgs(p) { return ' <span class="pg">' + p + "</span>"; }
+  var CK = { "TO DO":"c1", "MAY BE":"c2a", "INCERTO":"c2b", "NOT TO DO":"c3" };
+  var KK = { "TO DO":"k0", "MAY BE":"k2", "INCERTO":"k3", "NOT TO DO":"k4" };
+  function catPill(c) { return '<span class="cor ' + CK[c] + '">' + c + "</span>"; }
+  function evPill(ev, cat) { return '<span class="ev">' + EVL[ev] + (cat === "INCERTO" ? " sulla rilevanza" : "") + "</span>"; }
+  function advPill(id) { var a = ADV[id]; return catPill(a[0]) + " " + evPill(a[1], a[0]) + pgs(E + "advice p. " + a[2]); }
+  function corPill(c, l) { var k = { "I":"c1", "IIa":"c2a", "IIb":"c2b", "III":"c3" }[c]; return '<span class="cor ' + k + '">' + c + "</span>" + (l ? ' <span class="cor ' + k + '" style="opacity:.85">' + l + "</span>" : ""); }
+  var SENZA = '<span class="cor cnc">senza categoria</span>';
+  function nota(g, t) { return '<div class="nota ' + (g || "") + '">' + t + "</div>"; }
+  function chip(k, t) { return '<span class="cat ' + k + '">' + t + "</span>"; }
+  function riga(cls, ico, t) { return '<div class="riga ' + cls + '"><span class="ico">' + ico + '</span><span class="tx">' + t + "</span></div>"; }
+  function cap(t) { return t.charAt(0).toUpperCase() + t.slice(1); }
+  function advRiga(id, cls, ico, pre) { return riga(cls || "si", ico || "→", (pre ? pre + " " : "") + advPill(id) + "<br>" + cap(ADV[id][3]) + "."); }
+
+  function S() {
+    return {
+      scen:radio("scen"), fe:num("fe"), vp:radio("vp"),
+      morf:radio("morf"), qrs:num("qrs"), sede:radio("sede"),
+      aorta:radio("aorta"), tric:radio("tric"),
+      esito:radio("esito"), oper:radio("oper"), seduta:radio("seduta"),
+      semplice:ck("semplice"), dip:ck("dip"), soglia:ck("soglia"), sensing:ck("sensing")
+    };
+  }
+
+  function disegna() {
+    var s = pulisci(S());
+    var sc = s.scen;
+    // campi che contano solo in certi scenari
+    el("rigaFe").className = "row" + (sc === "snd" || sc === "nonresp" ? " hide" : "");
+    el("rigaVp").className = "row" + (sc === "bav" ? "" : " hide");
+    el("notaNoFe").className = "muted" + (sc === "snd" || sc === "nonresp" ? "" : " hide");
+    el("rigaMorf").className = "row" + (sc === "crt" || sc === "picm" || sc === "nonresp" || sc === "avna" ? "" : " hide");
+    el("rigaQrs").className = "row" + (sc === "crt" ? "" : " hide");
+    el("rigaSede").className = "row" + (sc === "bav" || sc === "picm" ? "" : " hide");
+    el("notaNoQrs").className = "muted" + (sc === "snd" ? "" : " hide");
+    el("rigaSeduta").className = "row" + (sc === "avna" ? "" : " hide");
+
+    var mo = modalita(s), r = mo.r, tp = tipo(s), bk = backup(s), dp = dopo(s, mo);
+    var dom = "";
+    if (s.fuoriDom.length) {
+      var nomi = { fe:"LVEF (atteso 5–80%)", qrs:"durata del QRS (attesa 60–300 ms)" }, dd = [];
+      for (var q = 0; q < s.fuoriDom.length; q++) dd.push(nomi[s.fuoriDom[q]]);
+      dom = nota("stop", "<b>Valore fuori dominio, ignorato:</b> " + dd.join(", ") + ". Lo strumento lo tratta come non inserito.");
+    }
+
+    /* (a) modalita' */
+    var bars = { CSP:["kx", "—"], BiVP:["kx", "—"], RVP:["kx", "—"] };
+    var h = "";
+    if (!r.f) {
+      h = "<h3>Modalità di stimolazione</h3>";
+      h += '<div class="esito">' + chip(r.snd || r.fuori ? "k3" : "kx", r.snd ? "nessuna advice" : r.fuori ? "fuori dalla figura" : "—") + '<span class="muted">' + r.perche + (r.snd ? pgs(E + "p. 15") : r.fuori ? pgs(E + "Fig. 8, p. 17") : "") + "</span></div>";
+      if (r.snd) {
+        h += nota("info", "Nella disfunzione sinusale il pacing ventricolare non necessario va ridotto, per evitare FA e scompenso; impiantare prima l'elettrocatetere atriale permette di valutare la conduzione AV e di decidere se il CSP serva. Chi più avanti avrà bisogno dell'ablazione del nodo può trarre vantaggio da un elettrocatetere CSP messo subito — " + SENZA + pgs(E + "p. 15") + ".");
+        bars = { CSP:["kx", "nessuna advice"], BiVP:["kx", "nessuna advice"], RVP:["kx", "nessuna advice"] };
+      }
+      if (r.fuori) bars = { CSP:["kx", "fuori figura"], BiVP:["kx", "fuori figura"], RVP:["kx", "fuori figura"] };
+    } else {
+      var f = r.f, d = mo.d;
+      h = "<h3>Modalità di stimolazione — " + f.fig + ", p. " + f.p + " · advice p. " + (s.scen === "picm" ? "21" : f.advP) + "</h3>";
+      h += '<div class="via">' + d.via + pgs(E + f.fig + ", p. " + f.p) + "</div>";
+      // riassunto per categoria
+      var gr = {}, i, m;
+      for (i = 0; i < MOD.length; i++) { m = mo.m[MOD[i]]; if (!m.fuori) { (gr[m.cat] = gr[m.cat] || []).push(MOD[i]); } }
+      if (s.scen === "nonresp") (gr["MAY BE"] = gr["MAY BE"] || []).push("HOT/LOT-CRT");
+      var cats = ["TO DO", "MAY BE", "INCERTO", "NOT TO DO"], pezzi = [];
+      for (i = 0; i < cats.length; i++) if (gr[cats[i]]) pezzi.push(gr[cats[i]].join(" · ") + " " + catPill(cats[i]));
+      h += '<div class="esito"><span class="big">' + pezzi.join(" &nbsp; ") + "</span></div>";
+      for (i = 0; i < MOD.length; i++) {
+        var nm = MOD[i]; m = mo.m[nm];
+        if (m.fuori) {
+          var perche = s.scen === "nonresp" && nm === "BiVP" ? "già impiantata e senza risposta: è il punto di partenza di questo ramo" : (FIGURE.crt === f && nm === "RVP") ? "la Fig. 8 non lo considera fra le opzioni" : "non è fra le opzioni di questo ramo della figura: nessuna categoria";
+          h += '<div class="mod fuori" id="mod' + nm + '"><div class="mh"><b class="mn">' + nm + "</b>" + chip("kx", "non in figura") + '</div><div class="md">' + perche + pgs(E + f.fig + ", p. " + f.p) + "</div></div>";
+          bars[nm] = ["kx", "non in figura"];
+          continue;
+        }
+        var ev = "", md = "<b>" + m.det + "</b>";
+        if (!m.adv.length) {
+          ev = '<span class="ev fig">dalla figura</span>';
+          md += " — categoria letta sulla figura: la fonte non le assegna una forza dell'evidenza, perché nessuna advice la ripete.";
+        } else {
+          for (var j = 0; j < m.adv.length; j++) {
+            var a = m.adv[j];
+            if (a.ok === false) { ev += '<span class="ev">—</span> '; md += " — " + a.perche + "."; }
+            else {
+              ev += evPill(a.ev, a.cat) + " ";
+              md += "<br>" + cap(ADV[a.id][3]) + pgs(E + "advice p. " + a.p) + (a.ok === "cond" ? " — <b>" + a.perche + "</b>" : a.cond ? " — " + a.cond : "") + ".";
+            }
+          }
+          if (m.cat === "INCERTO") md += " <span class=\"muted\">Area di incertezza: nessun advice è possibile per dati mancanti o incoerenti; il consenso riguarda la rilevanza del tema</span>" + pgs(E + "legenda, p. 3") + ".";
+        }
+        if (m.dag) md += "<br>† Se l'elettrocatetere in seno coronarico non si impianta, è consigliato il CSP" + pgs(E + "Fig. 5, nota †, p. 11; advice p. 12") + ".";
+        if (nm === "CSP" && s.scen === "bav") md += "<br>* Nel blocco infranodale il CSP preferito è il LBBAP, oppure l'HBP con un elettrocatetere di backup" + pgs(E + "Fig. 5, nota *, p. 11") + ".";
+        if (nm === "CSP" && s.scen === "avna") md += "<br>* LBBAP preferito, oppure HBP con un elettrocatetere di backup" + pgs(E + "Fig. 7, nota *, p. 14") + ".";
+        if (s.scen === "picm" && nm === "BiVP") md += "<br>* Della PICM esistono più definizioni; le prove sono soprattutto per la BiVP con LVEF ≤35%" + pgs(E + "Fig. 8, nota *, p. 17") + ".";
+        h += '<div class="mod" id="mod' + nm + '"><div class="mh"><b class="mn">' + nm + "</b>" + catPill(m.cat) + " " + ev + pgs(E + f.fig + ", p. " + f.p) + '</div><div class="md">' + md + "</div></div>";
+        bars[nm] = [KK[m.cat], m.cat];
+      }
+      if (s.scen === "nonresp") h += advRiga("hotUpg", "si", "+", "<b>HOT/LOT-CRT come upgrade</b>");
+      if (s.scen === "picm") {
+        var intatto = s.morf === "stretto" || s.sede === "nodale", non = s.morf === "bbs" || s.morf === "bbd" || s.morf === "nivcd" || s.sede === "infranodale";
+        if (intatto) h += nota("ok", "Sistema His-Purkinje <b>integro</b> (" + (s.morf === "stretto" ? "QRS nativo stretto" : "blocco nodale") + "): è il sottogruppo in cui l'advice dice «soprattutto» — il CSP ha più probabilità di dare un'attivazione sincrona" + pgs(E + "advice p. 21 e sua nota") + ".");
+        else if (non) h += nota("", "Sistema His-Purkinje <b>non integro</b> (" + (s.sede === "infranodale" ? "blocco infranodale" : "QRS nativo largo") + "): l'advice vale, ma non nel sottogruppo «soprattutto», che è QRS stretto o blocco nodale" + pgs(E + "advice p. 21") + ".");
+        h += nota("info", "La PICM è un calo della LVEF dovuto al pacing ventricolare cronico, con soglie diverse fra gli studi, di solito sotto il 40–50% o un calo di almeno 10 punti" + pgs(E + "p. 20") + (s.fe !== null && s.fe > SOGLIE.fe35 ? "; con LVEF " + s.fe + "% le prove della BiVP, raccolte soprattutto con LVEF ≤35%, sono meno dirette" + pgs(E + "Fig. 8, nota *, p. 17") : "") + ".");
+      }
+      if (s.scen === "avna" && s.morf === "stretto") h += nota("info", "QRS di base stretto: il CSP è efficace nel pace-and-ablate perché mantiene un'attivazione ventricolare normale in pazienti dipendenti dal pacing e a rischio di PICM, soprattutto con QRS di base stretto" + pgs(E + "p. 12") + " — " + SENZA + ".");
+      // dispositivo piu' semplice
+      if (s.semplice) {
+        var sid = { bav:"semplBav", avna:"semplAvna", crt:"semplCrt" }[s.scen];
+        if (sid) {
+          h += advRiga(sid, "si", "+", "<b>Dispositivo più semplice</b>");
+          if (!d.op.BiVP) h += nota("", "In questo ramo la BiVP non è fra le opzioni della figura: l'advice, che sceglie il CSP <b>invece della BiVP</b>, non cambia la scelta.");
+          if (s.oper === "no") h += nota("stop", "L'advice chiede di tenere conto dell'esperienza dell'operatore, qui indicata come insufficiente; la fonte non dice quanto pesi.");
+        } else h += nota("", "Dispositivo più semplice: le tre advice (pp. 12, 15, 18) parlano della strategia <b>primaria</b>; nell'upgrade la fonte non le ripete.");
+      }
+      h += nota("info", "<b>Che cosa la cambierebbe:</b> " + d.cambia + pgs(E + f.fig + ", p. " + f.p) + ".");
+    }
+    el("outMod").innerHTML = dom + h;
+
+    /* (b) HBP o LBBAP */
+    var ht = "<h3>HBP o LBBAP — Tab. 2, p. 8 · advice p. 9" + (s.scen === "avna" ? " e p. 15" : "") + "</h3>", barT = ["kx", "—"];
+    if (!s.scen) ht += '<div class="esito">' + chip("kx", "—") + '<span class="muted">' + tp.perche + "</span></div>";
+    else {
+      var lbl = { LBBAP:"LBBAP preferito", HBP:"HBP preferito", entrambi:"HBP o LBBAP", conflitto:"due preferenze opposte", libera:"a scelta dell'impiantatore" }[tp.esito];
+      if (tp.salv) lbl = tp.esito + " come salvataggio";
+      var kt = tp.esito === "conflitto" ? "k3" : tp.esito === "libera" ? "kx" : "k1";
+      ht += '<div class="esito"><span class="big">' + lbl + "</span></div>";
+      if (tp.salv) ht += riga("si", "→", tp.salvT + " " + SENZA + pgs(E + "Tab. 2, p. 8") + ". Saper fare tutte le tecniche dà un'alternativa quando la prima non riesce" + pgs(E + "p. 8") + ".");
+      for (var t = 0; t < tp.righe.length; t++) {
+        var rr = tp.righe[t];
+        if (rr.adv) ht += riga("si", "→", "<b>" + rr.verso + "</b> — " + rr.t + " " + advPill(rr.adv));
+        else ht += riga(rr.verso === "entrambi" ? "no" : "si", rr.verso === "entrambi" ? "·" : "→", "<b>" + (rr.verso === "entrambi" ? "HBP o LBBAP" : rr.verso) + "</b> — " + rr.t + " " + SENZA + pgs(E + rr.fonte));
+      }
+      if (tp.esito === "libera") ht += riga("no", "·", "Nessuna delle situazioni della Tab. 2 e delle advice di p. 9: in generale l'impiantatore può usare la modalità di CSP che gli è più congeniale " + SENZA + pgs(E + "p. 8") + ".");
+      if (tp.esito === "conflitto") ht += nota("stop", "<b>Due preferenze opposte:</b> la fonte non dice quale prevalga — vedi le incoerenze.");
+      if (scompenso(s) && s.morf) {
+        if (s.morf === "bbs") ht += riga("no", "·", "Resincronizzazione nel BBS: col LBBAP soglie molto basse e successo maggiore; con l'HBP soglie più alte e successo minore " + SENZA + pgs(E + "Tab. 1, p. 7") + ".");
+        if (s.morf === "bbd") ht += riga("no", "·", "Resincronizzazione nel BBD: più favorevole con l'HBP, anche non selettivo senza correzione del BBD; meno col LBBAP " + SENZA + pgs(E + "Tab. 1, p. 7") + ".");
+        if (s.morf === "nivcd") ht += riga("no", "·", "Ritardo aspecifico: pochissimi pazienti studiati col LBBAP, nessun RCT contro la BiV-CRT; l'HBP non corregge la malattia infra-hisiana o più distale " + SENZA + pgs(E + "p. 16") + ".");
+      }
+      if (tp.tab2) ht += nota(s.oper === "no" ? "stop" : "info", "La Tab. 2 presuppone un operatore <b>esperto in entrambe le tecniche</b> e parametri elettrici accettabili" + pgs(E + "Tab. 2, p. 8") + (s.oper === "no" ? ": con un operatore non esperto la sua preferenza non si applica così com'è." : "."));
+      barT = [kt, tp.esito === "conflitto" ? "conflitto" : tp.esito === "libera" ? "a scelta" : tp.esito === "entrambi" ? "HBP o LBBAP" : tp.esito + (tp.salv ? " · salvataggio" : "")];
+    }
+    el("outTipo").innerHTML = ht;
+
+    /* (c) backup */
+    var hb = "<h3>Elettrocatetere di backup — Tab. 1, p. 7 · Tab. 3, p. 13 · pp. 11–15 · advice p. 15 e p. 21</h3>";
+    if (!s.scen) hb += '<div class="esito">' + chip("kx", "—") + '<span class="muted">' + bk.perche + "</span></div>";
+    else {
+      hb += riga("no", "·", "<b>Con il LBBAP</b>: di solito non richiesto " + SENZA + pgs(E + "Tab. 1, p. 7" + (s.scen === "avna" ? "; Tab. 3, p. 13" : "")) + ".");
+      if (bk.adv) {
+        hb += advRiga(bk.adv, "si", "→", "<b>Con l'HBP nel pace-and-ablate</b>");
+        hb += riga("no", "·", "La Tab. 3 segna il backup come consigliato con l'HBP e non con RVP, BiV-CRT e LBBAP " + SENZA + pgs(E + "Tab. 3, p. 13") + ". Il rischio di rialzo della soglia cresce in modo esponenziale sotto i 6 mm dalla punta dell'elettrocatetere, e la crioablazione non lo riduce" + pgs(E + "p. 14") + ".");
+        if (bk.avna === "puo") hb += nota("ok", "Operatore esperto, HBP e ablazione <b>nella stessa seduta</b>: il testo ammette che si possa non impiantare il backup" + pgs(E + "p. 14") + " — " + SENZA + ".");
+        else if (bk.avna === "utile") hb += nota("", (s.oper === "no" ? "Operatore non esperto" : "Procedure in tempi separati") + ": fuori dal caso in cui la fonte ammette di farne a meno, il backup <b>è utile per la sicurezza</b>" + pgs(E + "p. 14") + ".");
+        else hb += nota("info", "Per decidere servono l'esperienza dell'operatore e se HBP e ablazione sono nella stessa seduta: l'operatore esperto, nella stessa seduta, può farne a meno; altrimenti il backup è utile per la sicurezza" + pgs(E + "p. 14") + ".");
+      }
+      if (bk.upg) hb += advRiga(bk.upg, "si", "→", "<b>Nell'upgrade a CSP</b>");
+      if (bk.bav) hb += riga("si", "→", "<b>Con l'HBP nel BAV</b>: un backup può essere utile per evitare l'asistolia, <b>soprattutto</b> nel blocco infranodale o con problemi di sensing — qui " + (s.sede === "infranodale" && s.sensing ? "entrambi" : s.sede === "infranodale" ? "blocco infranodale" : "problemi di sensing") + " " + SENZA + pgs(E + "p. 11; nota a, advice p. 12") + ".");
+      if (bk.bavGen) hb += riga("no", "·", "Con l'HBP nel BAV un backup può essere utile, soprattutto nel blocco infranodale o con problemi di sensing " + SENZA + pgs(E + "p. 11; nota a, advice p. 12") + ".");
+      if (bk.fatt.length) hb += riga("si", "→", "<b>Con l'HBP</b>: backup consigliato nei sottogruppi specifici — ablazione del nodo, dipendenza dal pacing, soglia di cattura alta, sensing scarso; qui: <b>" + bk.fatt.join(", ") + "</b> " + SENZA + pgs(E + "Tab. 1, p. 7") + ".");
+      else if (!bk.adv && !bk.upg && !bk.bav) hb += riga("no", "·", "Con l'HBP, nessuno dei sottogruppi in cui la Tab. 1 consiglia il backup (ablazione del nodo, dipendenza dal pacing, soglia alta, sensing scarso)" + pgs(E + "Tab. 1, p. 7") + ".");
+    }
+    el("outBackup").innerHTML = hb;
+
+    /* (d) dopo l'impianto */
+    var hd = "<h3>Se l'impianto non va come previsto — advice pp. 12, 15, 18, 20 · Tab. 2 · Tab. 4</h3>";
+    if (dp.perche) hd += '<div class="esito">' + chip("kx", "—") + '<span class="muted">' + dp.perche + "</span></div>";
+    else {
+      if (dp.incongruo) hd += '<div class="esito">' + chip("k3", "incongruo") + '<span class="muted">' + dp.incongruo + "</span></div>";
+      if (dp.sc) {
+        hd += '<div class="esito"><span class="big">CSP come salvataggio</span>' + catPill(ADV[dp.salvId][0]) + "</div>";
+        hd += advRiga(dp.salvId, "si", "→");
+        if (s.scen === "avna") hd += riga("no", "·", "Nella Fig. 7 il riquadro sta sotto la colonna LVEF ≤40%" + pgs(E + "Fig. 7, p. 14") + ".");
+        if (s.scen === "crt" || s.scen === "picm") hd += riga("no", "·", "Nella Fig. 8 è un riquadro a sé, senza frecce in ingresso: vale per ogni ramo" + pgs(E + "Fig. 8, p. 17") + ".");
+      }
+      if (dp.qrs) {
+        var hid = s.scen === "nonresp" ? "hotUpg" : "hotImp";
+        hd += '<div class="esito"><span class="big">HOT/LOT-CRT</span>' + catPill("MAY BE") + "</div>";
+        hd += advRiga(hid, "si", "→");
+        var disegnata = s.scen === "crt" || s.scen === "picm" || s.scen === "nonresp" || (r.f && mo.d.hotlot);
+        if (!disegnata && (s.scen === "bav" || s.scen === "avna")) hd += nota("", "La " + (s.scen === "bav" ? "Fig. 5" : "Fig. 7") + " disegna la HOT/LOT-CRT solo sotto la colonna LVEF ≤40%; l'advice di p. 20 non pone limiti di LVEF, e vale." + pgs(E + (s.scen === "bav" ? "Fig. 5, p. 11" : "Fig. 7, p. 14") + "; advice p. 20"));
+        hd += riga("no", "·", "Che cosa dice «subottimale» (Tab. 4): larghezza del QRS stimolato, presenza della cattura del sistema di conduzione, tempo al picco dell'onda R in V6 o aVL, intervallo fra i picchi V6–V1, QRS stimolato con incisure, asse, posizione del LBBAP (basale, media, apicale), risposta emodinamica acuta assente o minima" + pgs(E + "Tab. 4, p. 19") + ". Se il QRS stimolato è già fisiologico non si aggiunge il seno coronarico" + pgs(E + "p. 18") + ".");
+        if (s.oper === "no") hd += nota("stop", "L'advice chiede di tenere conto dell'esperienza dell'operatore e del rischio del paziente; la fonte non dice quanto pesino.");
+      }
+      if (dp.bail) {
+        hd += '<div class="esito"><span class="big">' + (s.esito === "lbbapko" ? "HBP" : "LBBAP") + " come salvataggio</span>" + SENZA + "</div>";
+        hd += riga("si", "→", (s.esito === "lbbapko" ? "LBBAP non riuscito o insoddisfacente (per esempio cicatrice settale): l'HBP «può essere preferito»" : "HBP non riuscito o insoddisfacente: il LBBAP «può essere preferito»") + pgs(E + "Tab. 2, p. 8") + ". Il CSP non riesce sempre: per questo il centro deve saper fare anche la BiVP " + advPill("centri") + ".");
+      }
+      if (dp.seSc) hd += riga("no", "·", "<b>Se</b> l'elettrocatetere in seno coronarico non si impianta: CSP come salvataggio " + advPill(dp.salvId) + ".");
+      if (dp.seQrs) hd += riga("no", "·", "<b>Se</b> il QRS stimolato con BiVP o CSP resta largo o non fisiologico: HOT/LOT-CRT " + advPill(s.scen === "nonresp" ? "hotUpg" : "hotImp") + ".");
+    }
+    el("outDopo").innerHTML = hd;
+
+    /* (e) sempre */
+    var hs = "<h3>In ogni caso — advice pp. 4, 9, 21, 22</h3>";
+    if (!s.scen) hs += '<div class="esito">' + chip("kx", "—") + '<span class="muted">scegliere lo scenario</span></div>';
+    else {
+      hs += advRiga("formazione", s.oper === "no" ? "esc" : "si", s.oper === "no" ? "!" : "→");
+      if (s.oper === "no") hs += nota("stop", "<b>Operatore non esperto</b>: è la condizione della prima advice. Tre altre advice chiedono di tenerne conto — dispositivo più semplice (pp. 12, 15, 18), backup con l'HBP nell'ablazione (p. 15), HOT/LOT-CRT (p. 20) — e la Tab. 2 la presuppone; nessuna dice quanto pesi.");
+      hs += advRiga("centri");
+      if (s.scen === "picm" || s.scen === "nonresp") hs += advRiga("valuta");
+      hs += advRiga("condivisa");
+    }
+    el("outSempre").innerHTML = hs;
+
+    /* incoerenze, confini, limiti */
+    var L = incoerenze(s, mo, tp, bk, dp), hinc = "";
+    for (var li = 0; li < L.length; li++) hinc += nota("", L[li]);
+    el("outInc").innerHTML = hinc || '<p class="muted" style="font-size:13px">Nessuna, per questo caso.</p>';
+
+    var C = confini(s, mo, dp), hc = "";
+    for (var ci = 0; ci < C.length; ci++) {
+      var cc = C[ci];
+      hc += '<div class="conf"><span class="ct">CONFINE · ' + cc.anno + "</span> " + (cc.cl ? corPill(cc.cl, cc.lv) + " " : '<span class="cor cnc">' + cc.lab + "</span> ") + cap(cc.t) + pgs(cc.p) + "</div>";
+    }
+    el("outConf").innerHTML = hc ? '<p class="muted" style="font-size:12.5px;margin-bottom:4px">Dove la ESC 2021 sul pacing (precedente, scala COR/LOE) o la ESC 2026 sullo scompenso (successiva) dicono altro sullo stesso punto. Dichiarati, non calcolati.</p>' + hc : '<p class="muted" style="font-size:13px">Nessuno, per questo caso.</p>';
+
+    var lim = [];
+    lim.push("È un <b>consensus di esperti</b>, con una scala sua: le categorie TO DO, MAY BE, NOT TO DO e INCERTO non sono classi di raccomandazione e non si convertono" + pgs(E + "legenda, p. 3") + ". Dove la categoria viene solo dalla figura, la forza dell'evidenza non esiste e lo strumento lo dice.");
+    if (s.scen === "bav") lim.push("La <b>quota di pacing ventricolare atteso</b> è una stima clinica: la fonte non dice come farla. Nel BAV con pacing infrequente il disturbo può evolvere in modo imprevedibile" + pgs(E + "p. 9") + ".");
+    if (s.scen === "crt") lim.push("La Fig. 8 parte da un'<b>indicazione a CRT</b> già posta: lo strumento non la stabilisce. Con QRS nativo stretto, o LVEF sopra il 50%, la figura non ha un ramo.");
+    if (s.scen === "picm") lim.push("Della PICM esistono più definizioni" + pgs(E + "Fig. 8, nota *, p. 17; p. 20") + ": lo strumento prende la diagnosi come data.");
+    if (s.scen === "nonresp") lim.push("«Non-responder» vale per i sintomi e/o il rimodellamento; la fonte non dà una soglia" + pgs(E + "p. 17") + ".");
+    lim.push("L'<b>esperienza dell'operatore</b> e il bisogno di un <b>dispositivo più semplice</b> entrano nelle advice senza una misura: lo strumento li elenca e non li pesa.");
+    lim.push("Il supplementare del consensus (Tab. S1–S9) non è stato usato. I limiti di plausibilità della LVEF (5–80%) e del QRS (60–300 ms) sono dello strumento, non della fonte.");
+    el("limiti").innerHTML = "<li>" + lim.join("</li><li>") + "</li>";
+
+    function bar(id, k, t) { var b = el(id); b.className = "cat " + k; b.innerHTML = t; }
+    bar("barCsp", bars.CSP[0], bars.CSP[1]); bar("barBiv", bars.BiVP[0], bars.BiVP[1]); bar("barRvp", bars.RVP[0], bars.RVP[1]);
+    bar("barTipo", barT[0], barT[1]); bar("barBackup", s.scen ? bk.chip[0] : "kx", s.scen ? bk.chip[1] : "—");
+  }
+
+  document.addEventListener("input", disegna);
+  document.addEventListener("change", disegna);
+  el("azzera").addEventListener("click", function () {
+    var ins = document.querySelectorAll("input");
+    for (var i = 0; i < ins.length; i++) {
+      if (ins[i].type === "checkbox" || ins[i].type === "radio") ins[i].checked = false;
+      else ins[i].value = "";
+    }
+    disegna();
+    window.scrollTo(0, 0);
+  });
+
+  window.CSP_MOTORE = {
+    ADV:ADV,
+    ramo:function (s) { return ramo(pulisci(s)); },
+    modalita:function (s) { return modalita(pulisci(s)); },
+    tipo:function (s) { return tipo(pulisci(s)); },
+    backup:function (s) { return backup(pulisci(s)); }
+  };
+  disegna();
+})();
+</script>
+<script data-iphone="web">
+// Solo da un indirizzo https, cioe' dalla pagina pubblicata: aperto come file
+// il tool non cerca ne' manifest ne' service worker, che accanto al file non
+// ci sono. Un errore qui non deve fermare niente: e' un di piu'.
+(function(){
+if(location.protocol!=="https:") return;
+try{
+  var t=document.getElementsByTagName("head")[0];
+  var m=document.createElement("link"); m.rel="manifest"; m.href="manifest.webmanifest";
+  var i=document.createElement("link"); i.rel="apple-touch-icon"; i.href="icona-180.png";
+  t.appendChild(m); t.appendChild(i);
+  if("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js")["catch"](function(){});
+}catch(e){}
+})();
+</script>
+<script data-iphone="fine">document.documentElement.className+=" motore-ok";</script>
+</body>
+</html>
